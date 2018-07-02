@@ -1,6 +1,7 @@
 // Copyright (c) 2012-2013 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2018, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
 
 #pragma once
 #include "cryptonote_protocol/cryptonote_protocol_defs.h"
@@ -80,13 +81,17 @@ namespace cryptonote
   bool get_block_hashing_blob(const block& b, blobdata& blob);
   bool get_bytecoin_block_hashing_blob(const block& b, blobdata& blob);
   blobdata get_block_hashing_blob(const bb_block& b);
-  bool get_block_hash(const block& b, crypto::hash& res);
+  // KARAI
+  bool get_block_hash(const block& b, crypto::hash& res, uint64_t mergedMiningBlockVersion = BLOCK_MAJOR_VERSION_4);
+  // KARAI
   crypto::hash get_block_hash(const block& b);
   bool get_block_header_hash(const block& b, crypto::hash& res);
   bool get_block_longhash(const block& b, crypto::hash& res, uint64_t height);
   crypto::hash get_block_longhash(const block& b, uint64_t height);
   bool get_bytecoin_block_longhash(const block& blk, crypto::hash& res);
-  bool generate_genesis_block(block& bl);
+  // KARAI
+  bool parse_and_validate_block_from_blob(const blobdata& b_blob, block& b, bool mergedMining = true);
+  // KARAI
   bool get_genesis_block_hash(crypto::hash& h);
   bool parse_and_validate_block_from_blob(const blobdata& b_blob, block& b);
   bool parse_and_validate_block_from_blob(const blobdata& b_blob, bb_block& b);
@@ -115,6 +120,19 @@ namespace cryptonote
   }
   //---------------------------------------------------------------
   template<class t_object>
+  // KARAI
+  bool t_serializable_object_to_blob(const t_object& to, blobdata& b_blob, bool mergedMining)
+  {
+    std::stringstream ss;
+    binary_archive<true> ba(ss);
+    auto ser = make_serializable_nomerge(const_cast<t_object&>(to));
+    bool r = ::serialization::serialize(ba, ser);
+    b_blob = ss.str();
+    return r;
+  }
+  //---------------------------------------------------------------
+  template<class t_object>
+  // KARAI
   blobdata t_serializable_object_to_blob(const t_object& to)
   {
     blobdata b;
@@ -199,6 +217,9 @@ namespace cryptonote
   //---------------------------------------------------------------
   blobdata block_to_blob(const block& b);
   bool block_to_blob(const block& b, blobdata& b_blob);
+  // KARAI
+  bool block_to_blob(const block& b, blobdata& b_blob, bool mergedMining);
+  // KARAI
   blobdata tx_to_blob(const transaction& b);
   bool tx_to_blob(const transaction& b, blobdata& b_blob);
   void get_tx_tree_hash(const std::vector<crypto::hash>& tx_hashes, crypto::hash& h);

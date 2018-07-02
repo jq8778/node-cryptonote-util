@@ -83,9 +83,13 @@ NAN_METHOD(convert_blob) {
 
     if (info.Length() < 1)
         return THROW_ERROR_EXCEPTION("You must provide one argument.");
-
-    Local<Object> target = info[0]->ToObject();
-
+// KARAI
+    Local<Object> target = args[0]->ToObject();
+    uint64_t mergedMiningBlockVersion = BLOCK_MAJOR_VERSION_2;
+    if (args.Length() >= 2) {
+      mergedMiningBlockVersion = static_cast<uint64_t>(args[1]->ToNumber()->NumberValue());
+    }
+// KARAI
     if (!Buffer::HasInstance(target))
         return THROW_ERROR_EXCEPTION("Argument should be a buffer object.");
 
@@ -94,10 +98,13 @@ NAN_METHOD(convert_blob) {
 
     //convert
     block b = AUTO_VAL_INIT(b);
-    if (!parse_and_validate_block_from_blob(input, b))
+// KARAI
+        if (!parse_and_validate_block_from_blob(input, b, b.major_version >= mergedMiningBlockVersion))
+// KARAI
         return THROW_ERROR_EXCEPTION("Failed to parse block");
-
-    if (b.major_version < BLOCK_MAJOR_VERSION_2) {
+// KARAI
+    if (b.major_version < mergedMiningBlockVersion) {
+// KARAI
         if (!get_block_hashing_blob(b, output))
             return THROW_ERROR_EXCEPTION("Failed to create mining block");
     } else {
@@ -118,9 +125,13 @@ NAN_METHOD(get_block_id) {
 
     if (info.Length() < 1)
         return THROW_ERROR_EXCEPTION("You must provide one argument.");
-
-    Local<Object> target = info[0]->ToObject();
-
+    // KARAI
+    Local<Object> target = args[0]->ToObject();
+    uint64_t mergedMiningBlockVersion = BLOCK_MAJOR_VERSION_2;
+    if (args.Length() >= 2) {
+      mergedMiningBlockVersion = static_cast<uint64_t>(args[1]->ToNumber()->NumberValue());
+    }
+    // KARAI    
     if (!Buffer::HasInstance(target))
         return THROW_ERROR_EXCEPTION("Argument should be a buffer object.");
 
@@ -128,7 +139,9 @@ NAN_METHOD(get_block_id) {
     blobdata output = "";
 
     block b = AUTO_VAL_INIT(b);
-    if (!parse_and_validate_block_from_blob(input, b))
+    // KARAI
+    if (!parse_and_validate_block_from_blob(input, b, b.major_version >= mergedMiningBlockVersion))
+    // KARAI
         return THROW_ERROR_EXCEPTION("Failed to parse block");
 
     crypto::hash block_id;
@@ -144,9 +157,15 @@ NAN_METHOD(construct_block_blob) {
 
     if (info.Length() < 2)
         return THROW_ERROR_EXCEPTION("You must provide two arguments.");
+// KARAI
+    Local<Object> block_template_buf = args[0]->ToObject();
+    Local<Object> nonce_buf = args[1]->ToObject();
 
-    Local<Object> block_template_buf = info[0]->ToObject();
-    Local<Object> nonce_buf = info[1]->ToObject();
+    uint64_t mergedMiningBlockVersion = BLOCK_MAJOR_VERSION_2;
+    if (args.Length() >= 3) {
+      mergedMiningBlockVersion = static_cast<uint64_t>(args[2]->ToNumber()->NumberValue());
+    }
+// KARAI
 
     if (!Buffer::HasInstance(block_template_buf) || !Buffer::HasInstance(nonce_buf))
         return THROW_ERROR_EXCEPTION("Both arguments should be buffer objects.");
@@ -160,11 +179,15 @@ NAN_METHOD(construct_block_blob) {
     blobdata output = "";
 
     block b = AUTO_VAL_INIT(b);
-    if (!parse_and_validate_block_from_blob(block_template_blob, b))
+    // KARAI
+    if (!parse_and_validate_block_from_blob(block_template_blob, b, b.major_version >= mergedMiningBlockVersion))
+    // KARAI
         return THROW_ERROR_EXCEPTION("Failed to parse block");
 
     b.nonce = nonce;
-    if (b.major_version == BLOCK_MAJOR_VERSION_2) {
+// KARAI
+        if (b.major_version == mergedMiningBlockVersion) {
+// KARAI
         block parent_block;
         b.parent_block.nonce = nonce;
         if (!construct_parent_block(b, parent_block))
@@ -178,8 +201,9 @@ NAN_METHOD(construct_block_blob) {
         b.parent_block.nonce = nonce;
         if (!construct_parent_block(b, parent_block))
             return THROW_ERROR_EXCEPTION("Failed to construct parent block");
-
-        if (!mergeBlocks(parent_block, b, std::vector<crypto::hash>()))
+// KARAI
+        if (!mergeBlocks(parent_block, b.major_version >= mergedMiningBlockVersion, std::vector<crypto::hash>()))
+// KARAI        
             return THROW_ERROR_EXCEPTION("Failed to postprocess mining block");
     }
     if (b.major_version == BLOCK_MAJOR_VERSION_4) {
@@ -188,7 +212,7 @@ NAN_METHOD(construct_block_blob) {
       if (!construct_parent_block(b, parent_block))
         return THROW_ERROR_EXCEPTION("Failed to construct parent block");
 
-      if (!mergeBlocks(parent_block, b, std::vector<crypto::hash>()))
+      if (!mergeBlocks(parent_block, b, output, b.major_version >= mergedMiningBlockVersion, std::vector<crypto::hash>()))
         return THROW_ERROR_EXCEPTION("Failed to postprocess mining block");
     }
 

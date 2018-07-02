@@ -1,7 +1,7 @@
 // Copyright (c) 2012-2013 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+// Copyright (c) 2018, The TurtleCoin Developers
+// 
+// Please see the included LICENSE file for more information.
 #include "include_base_utils.h"
 using namespace epee;
 
@@ -621,7 +621,11 @@ namespace cryptonote
   //---------------------------------------------------------------
   bool get_block_hashing_blob(const block& b, blobdata& blob)
   {
-    blob = t_serializable_object_to_blob(static_cast<const block_header&>(b));
+    // KARAI
+    if (!t_serializable_object_to_blob(static_cast<const block_header&>(b), blob, true)) {
+      return false;
+    }
+    // KARAI
     crypto::hash tree_root_hash = get_tx_tree_hash(b);
     blob.append(reinterpret_cast<const char*>(&tree_root_hash), sizeof(tree_root_hash));
     blob.append(tools::get_varint_data(b.tx_hashes.size()+1));
@@ -644,13 +648,15 @@ namespace cryptonote
     return blob;
   }
   //---------------------------------------------------------------
-  bool get_block_hash(const block& b, crypto::hash& res)
+// KARAI
+  bool get_block_hash(const block& b, crypto::hash& res, uint64_t mergedMiningBlockVersion)
   {
     blobdata blob;
     if (!get_block_hashing_blob(b, blob))
       return false;
 
-    if (BLOCK_MAJOR_VERSION_2 <= b.major_version)
+    if (mergedMiningBlockVersion <= b.major_version)
+// KARAI
     {
       blobdata parent_blob;
       auto sbb = make_serializable_bytecoin_block(b, true, false);
@@ -782,12 +788,22 @@ namespace cryptonote
     return true;
   }
   //---------------------------------------------------------------
-  bool parse_and_validate_block_from_blob(const blobdata& b_blob, block& b)
+  // KARAI
+  bool parse_and_validate_block_from_blob(const blobdata& b_blob, block& b, bool mergedMining)
+  // KARAI
   {
     std::stringstream ss;
     ss << b_blob;
     binary_archive<false> ba(ss);
-    bool r = ::serialization::serialize(ba, b);
+    // KARAI
+    bool r = false;
+    if (mergedMining) {
+      r = ::serialization::serialize(ba, b);
+    } else {
+      auto ser = make_serializable_nomerge(b);
+      r = ::serialization::serialize(ba, ser);
+    }
+    // KARAI
     CHECK_AND_ASSERT_MES(r, false, "Failed to parse block from blob");
     return true;
   }
@@ -806,6 +822,13 @@ namespace cryptonote
     return t_serializable_object_to_blob(b);
   }
   //---------------------------------------------------------------
+  // KARAI
+  bool block_to_blob(const block& b, blobdata& b_blob, bool mergedMining)
+  {
+    return t_serializable_object_to_blob(b, b_blob, mergedMining);
+  }
+  //---------------------------------------------------------------
+  // KARAI
   bool block_to_blob(const block& b, blobdata& b_blob)
   {
     return t_serializable_object_to_blob(b, b_blob);
