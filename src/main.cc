@@ -94,8 +94,8 @@ NAN_METHOD(convert_blob) {
 
     //convert
     block b = AUTO_VAL_INIT(b);
-    if (!parse_and_validate_block_from_blob(input, b))
-        return THROW_ERROR_EXCEPTION("Failed to parse block");
+    //if (!parse_and_validate_block_from_blob(input, b))
+        //return THROW_ERROR_EXCEPTION("Failed to parse block");
 
     if (b.major_version < BLOCK_MAJOR_VERSION_2) {
         if (!get_block_hashing_blob(b, output))
@@ -128,8 +128,8 @@ NAN_METHOD(get_block_id) {
     blobdata output = "";
 
     block b = AUTO_VAL_INIT(b);
-    if (!parse_and_validate_block_from_blob(input, b))
-        return THROW_ERROR_EXCEPTION("Failed to parse block");
+    //if (!parse_and_validate_block_from_blob(input, b))
+        //return THROW_ERROR_EXCEPTION("Failed to parse block");
 
     crypto::hash block_id;
     if (!get_block_hash(b, block_id))
@@ -160,8 +160,8 @@ NAN_METHOD(construct_block_blob) {
     blobdata output = "";
 
     block b = AUTO_VAL_INIT(b);
-    if (!parse_and_validate_block_from_blob(block_template_blob, b))
-        return THROW_ERROR_EXCEPTION("Failed to parse block");
+    //if (!parse_and_validate_block_from_blob(block_template_blob, b))
+        //return THROW_ERROR_EXCEPTION("Failed to parse block");
 
     b.nonce = nonce;
     if (b.major_version == BLOCK_MAJOR_VERSION_2) {
@@ -214,8 +214,8 @@ NAN_METHOD(convert_blob_bb) {
 
     //convert
     bb_block b = AUTO_VAL_INIT(b);
-    if (!parse_and_validate_block_from_blob(input, b)) {
-        return THROW_ERROR_EXCEPTION("Failed to parse block");
+    //if (!parse_and_validate_block_from_blob(input, b)) {
+        //return THROW_ERROR_EXCEPTION("Failed to parse block");
     }
     output = get_block_hashing_blob(b);
 
